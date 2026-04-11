@@ -208,6 +208,9 @@ interface UrlCheckResult extends CheckResult {
 
   /** For API matches: additional detail from the API. */
   threatDetail?: string;
+
+  /** Names of remote APIs that failed (timeout, network error, etc.) and fell back to allow. */
+  remoteErrors?: string[];
 }
 ```
 
@@ -283,6 +286,7 @@ export type {
   ContentCheckResult,
   FeedStatus,
   FeedInfo,
+  ResolvedConfig,
 } from './types';
 ```
 

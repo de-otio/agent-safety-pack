@@ -69,12 +69,12 @@ All arrows point downward. There are no circular dependencies. Each checker depe
      │  (default: ../patterns/ relative to package root)
      │
 4. Load and compile pattern files (synchronous, once)
-     │  ├── bash-deny.txt          → CompiledPatternSet
-     │  ├── webfetch-domain-blocklist.txt → CompiledPatternSet (case-insensitive)
-     │  ├── secrets-patterns.txt   → CompiledPatternSet (case-insensitive)
-     │  ├── injection-patterns.txt → CompiledPatternSet (case-insensitive)
-     │  ├── websearch-leak-patterns.txt → CompiledPatternSet (case-insensitive)
-     │  └── sensitive-paths.txt    → SensitivePathSet (with deny/ask sections)
+     │  ├── bash-deny.txt          → CompiledPatternSet (flags: "i")
+     │  ├── webfetch-domain-blocklist.txt → CompiledPatternSet (flags: "i")
+     │  ├── secrets-patterns.txt   → CompiledPatternSet (flags: "im")
+     │  ├── injection-patterns.txt → CompiledPatternSet (flags: "im")
+     │  ├── websearch-leak-patterns.txt → CompiledPatternSet (flags: "im")
+     │  └── sensitive-paths.txt    → SensitivePathSet (flags: "i", with deny/ask sections)
      │
 5. If localFeeds enabled and feedsDir exists:
      │  Load feed files into Set<string> (one Set per feed file)

@@ -14,8 +14,15 @@ npm test
 ### Requirements
 
 - Node.js >= 20
-- bash, grep (with -E), jq, curl
-- ShellCheck (for linting shell scripts)
+
+## Development Commands
+
+```bash
+npm run build      # ESM + CJS build
+npm test           # Run tests (vitest)
+npm run lint       # Biome check + tsc --noEmit
+npm run lint:fix   # Auto-fix lint issues
+```
 
 ## How to Contribute
 
@@ -26,32 +33,47 @@ Pattern files live in `patterns/`. Each file is one regex per line with `#` comm
 When adding or modifying patterns:
 
 1. Add the regex to the appropriate file in `patterns/`
-2. Add test cases in `test/` covering both true positives and true negatives
+2. Add test cases covering both true positives and true negatives
 3. Test against realistic benign inputs to avoid false positives
+4. Run `npm test` to verify no regressions
 
-### Adding an Integration
+Pattern compilation flags are set per file in `src/factory.ts`:
+- `bash-deny.txt` — `i` (case-insensitive)
+- `webfetch-domain-blocklist.txt` — `i`
+- `secrets-patterns.txt` — `im` (case-insensitive + multiline)
+- `injection-patterns.txt` — `im`
+- `websearch-leak-patterns.txt` — `im`
+- `sensitive-paths.txt` — `i` (compiled in `sensitive-paths.ts`)
 
-See `integrations/claude-code/` as a reference. An integration is a thin adapter that:
+### Adding a Hook
 
-1. Parses the agent's tool call format
-2. Calls `lib/check.sh` functions or pipes to `integrations/generic/check-*.sh`
-3. Maps results to the agent's allow/deny mechanism
+Hook scripts live in `hooks/`. Each hook:
+
+1. Reads JSON from stdin
+2. Calls the safety checker library
+3. Writes JSON to stdout
+4. Exits with code 2 (deny), 0 (allow/ask)
+
+See `hooks/pre-bash.js` as a reference. All hooks must include try/catch around `JSON.parse` and fail closed (exit 2) on parse errors.
+
+Update `hooks/settings.json` with the new hook's matcher and command.
 
 ### Code Style
 
-- Shell scripts: follow ShellCheck recommendations, use `set -euo pipefail`
-- JavaScript: run `npm run lint:fix` before committing
+- TypeScript: run `npm run lint:fix` before committing
+- Biome handles formatting and import ordering
+- No runtime dependencies — dev dependencies only
 
 ## Pull Requests
 
 1. Fork the repo and create a branch from `main`
 2. Add tests for any new functionality
-3. Run `npm test` and `npm run lint` locally
-4. Keep PRs focused -- one pattern category or one integration per PR
+3. Run `npm run lint && npm test` locally
+4. Keep PRs focused — one pattern category or one feature per PR
 
 ## Reporting Security Issues
 
-If you find a bypass or vulnerability in the safety checks, please report it responsibly. Open a GitHub issue -- these are safety patterns, not secrets, so public discussion helps the community.
+If you find a bypass or vulnerability in the safety checks, please report it responsibly. Open a GitHub issue — these are safety patterns, not secrets, so public discussion helps the community.
 
 ## License
 
