@@ -21,6 +21,15 @@
         ]
       },
       {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node node_modules/@de-otio/agent-safety-pack/hooks/pre-read.js"
+          }
+        ]
+      },
+      {
         "matcher": "WebFetch",
         "hooks": [
           {

@@ -30,7 +30,9 @@ function parsePathFile(filePath: string, content: string): SensitivePathSet {
     if (!trimmed || trimmed.startsWith("#")) continue;
 
     try {
-      const compiled: CompiledPattern = { source: trimmed, regex: new RegExp(trimmed) };
+      // SECURITY: compile with 'i' flag so .ENV/.Env/.env all match on
+      // case-insensitive filesystems (macOS APFS, Windows NTFS)
+      const compiled: CompiledPattern = { source: trimmed, regex: new RegExp(trimmed, "i") };
       if (section === "deny") {
         denyPatterns.push(compiled);
       } else {

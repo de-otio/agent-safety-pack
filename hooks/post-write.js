@@ -8,8 +8,30 @@ const patternsDir = resolve(__dirname, "..", "patterns");
 const checker = createSafetyChecker({ patternsDir });
 const strict = process.env.AGENT_SAFETY_MODE === "strict";
 
-const input = JSON.parse(await readStdin());
-const content = input?.tool_input?.content ?? "";
+let input;
+try {
+  input = JSON.parse(await readStdin());
+} catch {
+  process.stdout.write(
+    JSON.stringify({
+      permissionDecision: "deny",
+      additionalContext: "Safety hook failed to parse input — denying for safety",
+    }),
+  );
+  process.exit(2);
+}
+
+// Extract content from Write, Edit, or MultiEdit tool payloads
+const toolName = input?.tool_name ?? "";
+let content = "";
+if (toolName === "Edit") {
+  content = input?.tool_input?.new_string ?? "";
+} else if (toolName === "MultiEdit") {
+  content = (input?.tool_input?.edits ?? []).map((e) => e.new_string ?? "").join("\n");
+} else {
+  // Write tool or fallback
+  content = input?.tool_input?.content ?? "";
+}
 
 const result = checker.checkContentSecrets(content);
 

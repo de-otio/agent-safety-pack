@@ -2,7 +2,6 @@
 // src/bin/update-feeds.ts
 import { mkdirSync, renameSync, unlinkSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -81,9 +80,10 @@ async function downloadFeed(
     return false;
   }
 
-  // Atomic replacement: write to temp file, then rename over live file
+  // Atomic replacement: write temp file in same directory as target to avoid
+  // EXDEV (cross-device link) errors when feedsDir is on a different filesystem
   const livePath = join(feedsDir, `${source.name}.txt`);
-  const tmpPath = join(tmpdir(), `asp-feed-${source.name}-${Date.now()}.tmp`);
+  const tmpPath = join(feedsDir, `.tmp-${source.name}-${Date.now()}.txt`);
 
   try {
     await writeFile(tmpPath, responseText, "utf-8");

@@ -17,6 +17,11 @@ const THREAT_DESCRIPTIONS: Record<string, string> = {
  * SECURITY: The apiKey is embedded in the request URL inside this function only.
  * It must never be passed as a process/CLI argument where it could appear in `ps aux`.
  *
+ * NOTE: The GSB v4 API requires the key as a URL query parameter (?key=...).
+ * This means the key may be visible to HTTP proxies, corporate firewalls,
+ * and server-side request logs. For sensitive deployments, consider using the
+ * GSB v4 Update API (hash-prefix lookup) which avoids sending full URLs and keys.
+ *
  * Returns null if the URL is clean, the check fails, or times out (fail open).
  */
 export async function checkGoogleSafeBrowsing(

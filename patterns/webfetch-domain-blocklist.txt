@@ -130,6 +130,17 @@
 \[::1\]
 \[fd[0-9a-f]{2}:
 \[fe80:
+\[0+:.*:0*1\]
+# Short-form localhost IPs
+https?://0(/|$|:)
+https?://127\.\d+(/|$|:)
+# DNS wildcard services that resolve to 127.0.0.1 — SSRF bypass
+\blvh\.me\b
+\bvcap\.me\b
+\blocaltest\.me\b
+\bsslip\.io\b
+\bnip\.io\b
+\bxip\.io\b
 \.internal\b
 \.local\b
 \.corp\b

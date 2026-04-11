@@ -31,8 +31,8 @@ function makeFeeds(urlsByFeed: Record<string, string[]>): Map<string, LoadedFeed
   return feeds;
 }
 
-function makeClient(result: RemoteApiResult | null): RemoteApiClient {
-  return { check: vi.fn().mockResolvedValue(result) };
+function makeClient(result: RemoteApiResult | null, name = "test-api"): RemoteApiClient {
+  return { name, check: vi.fn().mockResolvedValue(result) };
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -240,5 +240,68 @@ describe("checkUrl — allow cases", () => {
   it("returns allow for empty string input", async () => {
     const result = await checkUrl("", emptyBlocklist, new Map(), false, [], 5000);
     expect(result.decision).toBe("allow");
+  });
+});
+
+describe("checkUrl — security: percent-encoding bypass (Finding #3)", () => {
+  it("blocks percent-encoded domain (b%69t.ly → bit.ly)", async () => {
+    const blocklist = makeBlocklist(["\\bbit\\.ly\\b"]);
+    const result = await checkUrl("https://b%69t.ly/abc", blocklist, new Map(), false, [], 5000);
+    expect(result.decision).toBe("deny");
+    expect(result.tier).toBe("blocklist");
+  });
+
+  it("blocks encoded dot in domain (bit%2Ely → bit.ly)", async () => {
+    const blocklist = makeBlocklist(["\\bbit\\.ly\\b"]);
+    const result = await checkUrl("https://bit%2Ely/abc", blocklist, new Map(), false, [], 5000);
+    expect(result.decision).toBe("deny");
+  });
+
+  it("blocks fully-encoded localhost", async () => {
+    const blocklist = makeBlocklist(["\\blocalhost\\b"]);
+    const result = await checkUrl(
+      "https://%6c%6f%63%61%6c%68%6f%73%74/admin",
+      blocklist,
+      new Map(),
+      false,
+      [],
+      5000,
+    );
+    expect(result.decision).toBe("deny");
+  });
+});
+
+describe("checkUrl — security: remote error diagnostics (Finding #13)", () => {
+  const emptyBlocklist = makeBlocklist([]);
+
+  it("reports remote errors in remoteErrors field", async () => {
+    const failingClient: RemoteApiClient = {
+      name: "failing-api",
+      check: vi.fn().mockRejectedValue(new Error("network timeout")),
+    };
+    const result = await checkUrl(
+      "https://example.com/",
+      emptyBlocklist,
+      new Map(),
+      false,
+      [failingClient],
+      5000,
+    );
+    expect(result.decision).toBe("allow");
+    expect(result.remoteErrors).toEqual(["failing-api"]);
+  });
+
+  it("does not include remoteErrors when all APIs succeed", async () => {
+    const client = makeClient(null, "clean-api");
+    const result = await checkUrl(
+      "https://safe.com/",
+      emptyBlocklist,
+      new Map(),
+      false,
+      [client],
+      5000,
+    );
+    expect(result.decision).toBe("allow");
+    expect(result.remoteErrors).toBeUndefined();
   });
 });

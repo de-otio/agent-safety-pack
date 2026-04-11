@@ -8,7 +8,18 @@ const patternsDir = resolve(__dirname, "..", "patterns");
 const checker = createSafetyChecker({ patternsDir });
 const strict = process.env.AGENT_SAFETY_MODE === "strict";
 
-const input = JSON.parse(await readStdin());
+let input;
+try {
+  input = JSON.parse(await readStdin());
+} catch {
+  process.stdout.write(
+    JSON.stringify({
+      permissionDecision: "deny",
+      additionalContext: "Safety hook failed to parse input — denying for safety",
+    }),
+  );
+  process.exit(2);
+}
 const output = input?.tool_response?.output ?? "";
 
 const result = checker.checkContentSecrets(output);

@@ -58,7 +58,29 @@
 \bhead\b.*\.env\b
 \btail\b.*\.env\b
 \bsource\b.*\.env\b
-\b\.\s+.*\.env\b
+# POSIX dot-source (. .env) — use lookbehind instead of \b which requires a word char before dot
+(^|[\s;&|])\.\s+.*\.env\b
+# Additional credential-reading commands for .env
+\b(more|bat|vim|nano|vi)\b.*\.env\b
+\bcp\b.*\.env\b
+\bmv\b.*\.env\b
+\bscp\b.*\.env\b
+# Dump environment variables (may contain secrets)
+(^|[\s;&|])\benv\b\s*$
+(^|[\s;&|])\bprintenv\b
+\bexport\s+-p\b
+# Crontab manipulation (persistence)
+\bcrontab\b
+# Docker socket mount (container escape)
+docker\.sock
+\bdocker\s+run\b.*--mount\b.*source\s*=\s*/
+# wget without explicit safe flags (potential exfil/payload download)
+\bwget\b.*https?://
+# curl with command substitution in URL (exfil via GET)
+\bcurl\b.*\$\(
+# DNS exfiltration via dig/nslookup with substitution
+\bdig\b.*\$\(
+\bnslookup\b.*\$\(
 # History files (may contain secrets typed interactively)
 \.(bash_history|zsh_history|python_history|node_repl_history|psql_history|mysql_history)\b
 # Private keys

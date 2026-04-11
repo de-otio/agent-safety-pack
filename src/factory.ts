@@ -68,6 +68,7 @@ function buildRemoteClients(config: ReturnType<typeof resolveConfig>): RemoteApi
 
   if (config.remoteApis.urlhaus) {
     clients.push({
+      name: "urlhaus",
       check: (url, _domain, timeout) => checkUrlhaus(url, timeout),
     });
   }
@@ -75,12 +76,14 @@ function buildRemoteClients(config: ReturnType<typeof resolveConfig>): RemoteApi
   if (config.remoteApis.googleSafeBrowsing) {
     const key = config.remoteApis.googleSafeBrowsing;
     clients.push({
+      name: "google-safe-browsing",
       check: (url, _domain, timeout) => checkGoogleSafeBrowsing(url, key, timeout),
     });
   }
 
   if (config.remoteApis.spamhausDbl) {
     clients.push({
+      name: "spamhaus-dbl",
       check: (_url, domain, timeout) => checkSpamhausDbl(domain, timeout),
     });
   }

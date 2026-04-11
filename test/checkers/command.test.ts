@@ -44,4 +44,11 @@ describe("checkCommand", () => {
     const result = checkCommand("rm -rf /", patterns);
     expect(result.decision).not.toBe("ask");
   });
+
+  it("SECURITY: matches POSIX dot-source (. .env) — fixed from \\b dot issue", () => {
+    const dotSourcePatterns = makePatterns(["(^|[\\s;&|])\\.\\s+.*\\.env\\b"]);
+    expect(checkCommand(". .env", dotSourcePatterns).decision).toBe("deny");
+    expect(checkCommand(". ./.env", dotSourcePatterns).decision).toBe("deny");
+    expect(checkCommand("cmd && . .env", dotSourcePatterns).decision).toBe("deny");
+  });
 });

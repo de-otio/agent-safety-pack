@@ -7,7 +7,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const patternsDir = resolve(__dirname, "..", "patterns");
 const checker = createSafetyChecker({ patternsDir });
 
-const input = JSON.parse(await readStdin());
+let input;
+try {
+  input = JSON.parse(await readStdin());
+} catch {
+  process.stdout.write(
+    JSON.stringify({
+      permissionDecision: "deny",
+      additionalContext: "Safety hook failed to parse input — denying for safety",
+    }),
+  );
+  process.exit(2);
+}
 const url = input?.tool_input?.url ?? "";
 
 const result = await checker.checkUrl(url);

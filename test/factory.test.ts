@@ -94,6 +94,13 @@ describe("checkPath", () => {
     expect(result.section).toBe("ask");
     expect(result.source).toBe("sensitive-paths");
   });
+
+  it("SECURITY: case-insensitive path matching (.ENV, .Ssh) on case-insensitive FS", () => {
+    const result = checker.checkPath("/home/user/.ENV");
+    expect(result.decision).not.toBe("allow");
+    const sshResult = checker.checkPath("/home/user/.SSH/id_rsa");
+    expect(sshResult.decision).not.toBe("allow");
+  });
 });
 
 describe("checkContentSecrets", () => {

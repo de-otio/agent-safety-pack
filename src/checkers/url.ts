@@ -5,9 +5,10 @@ import { matchFirst } from "../patterns/matcher.js";
 import type { RemoteApiResult } from "../remote/urlhaus.js";
 // src/checkers/url.ts
 import type { UrlCheckResult } from "../types.js";
-import { extractDomain } from "../utils/url.js";
+import { extractDomain, normalizeUrlForMatching } from "../utils/url.js";
 
 export interface RemoteApiClient {
+  name: string;
   check(url: string, domain: string, timeout: number): Promise<RemoteApiResult | null>;
 }
 
@@ -41,17 +42,21 @@ export async function checkUrl(
 
   const domain = extractDomain(url);
 
-  // Tier 1: Static blocklist
-  const blocklistMatch = matchFirst(url, blocklistPatterns);
-  if (blocklistMatch.matched) {
-    return {
-      decision: "deny",
-      url,
-      tier: "blocklist",
-      matchedPattern: blocklistMatch.pattern,
-      source: "webfetch-domain-blocklist",
-      reason: `URL matches blocklist pattern: ${blocklistMatch.pattern}`,
-    };
+  // Tier 1: Static blocklist — match against normalized URL candidates
+  // to prevent percent-encoding bypass (e.g. b%69t.ly evading \bbit\.ly\b)
+  const urlCandidates = normalizeUrlForMatching(url);
+  for (const candidate of urlCandidates) {
+    const blocklistMatch = matchFirst(candidate, blocklistPatterns);
+    if (blocklistMatch.matched) {
+      return {
+        decision: "deny",
+        url,
+        tier: "blocklist",
+        matchedPattern: blocklistMatch.pattern,
+        source: "webfetch-domain-blocklist",
+        reason: `URL matches blocklist pattern: ${blocklistMatch.pattern}`,
+      };
+    }
   }
 
   // Tier 2: Local threat feeds
@@ -70,20 +75,30 @@ export async function checkUrl(
   }
 
   // Tier 3: Remote APIs (sequential, short-circuit on first match)
+  // Track which APIs failed so callers can detect degraded protection
+  const remoteErrors: string[] = [];
   for (const client of remoteClients) {
-    const apiResult = await client.check(url, domain, remoteTimeout);
-    if (apiResult) {
-      return {
-        decision: "deny",
-        url,
-        tier: "api",
-        source: apiResult.source,
-        threatType: apiResult.threatType,
-        threatDetail: apiResult.detail,
-        reason: apiResult.reason,
-      };
+    try {
+      const apiResult = await client.check(url, domain, remoteTimeout);
+      if (apiResult) {
+        return {
+          decision: "deny",
+          url,
+          tier: "api",
+          source: apiResult.source,
+          threatType: apiResult.threatType,
+          threatDetail: apiResult.detail,
+          reason: apiResult.reason,
+        };
+      }
+    } catch {
+      remoteErrors.push(client.name);
     }
   }
 
-  return { decision: "allow", url };
+  const result: UrlCheckResult = { decision: "allow", url };
+  if (remoteErrors.length > 0) {
+    result.remoteErrors = remoteErrors;
+  }
+  return result;
 }

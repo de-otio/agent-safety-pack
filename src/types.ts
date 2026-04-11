@@ -15,6 +15,8 @@ export interface UrlCheckResult extends CheckResult {
   feedName?: string;
   threatType?: string;
   threatDetail?: string;
+  /** Names of remote APIs that failed (timeout, network error, etc.) and fell back to allow. */
+  remoteErrors?: string[];
 }
 
 export interface PathCheckResult extends CheckResult {
