@@ -1,0 +1,13 @@
+# Development
+.github/
+.claude/
+.doc-search-index/
+.editorconfig
+.npmrc
+test/
+doc/
+tmp/
+feeds/
+biome.json
+CONTRIBUTING.md
+CHANGELOG.md

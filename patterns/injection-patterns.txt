@@ -1,0 +1,175 @@
+# Prompt injection detection patterns
+# One extended regex per line (case-insensitive). Lines starting with # are comments.
+# Used by PostToolUse hooks to scan fetched web content, search results,
+# and subagent output for prompt injection attempts.
+#
+# All patterns are applied with -i (case-insensitive).
+
+# ============================================================
+# INSTRUCTION OVERRIDE ATTEMPTS
+# ============================================================
+
+# Direct overrides
+\bignore\s+(all\s+)?(previous|prior|above|earlier|preceding|original)\s+(instructions?|prompts?|rules?|guidelines?|directions?|constraints?)\b
+\bdisregard\s+(all\s+)?(previous|prior|above|earlier|preceding|original)\s+(instructions?|prompts?|rules?|guidelines?|directions?|constraints?)\b
+\bforget\s+(all\s+)?(previous|prior|above|earlier|preceding|original)\s+(instructions?|prompts?|rules?|guidelines?|directions?|constraints?)\b
+\boverride\s+(all\s+)?(previous|prior|above|earlier|preceding|original)\s+(instructions?|prompts?|rules?|guidelines?|directions?|constraints?)\b
+\bdo\s+not\s+follow\s+(the\s+)?(previous|prior|above|original)\s+(instructions?|rules?)\b
+\bstop\s+following\s+(the\s+)?(previous|prior|above|original)\s+(instructions?|rules?)\b
+# "New instructions" framing
+\bnew\s+instructions?\s*:\b
+\bupdated\s+instructions?\s*:\b
+\brevised\s+instructions?\s*:\b
+\bcorrected\s+instructions?\s*:\b
+\bactual\s+instructions?\s*:\b
+\breal\s+instructions?\s*:\b
+\btrue\s+instructions?\s*:\b
+# "From now on" reframing
+\bfrom\s+now\s+on\b.*\b(you\s+(are|should|must|will|shall)|your\s+(role|task|job|purpose))\b
+\bfor\s+the\s+rest\s+of\s+this\s+(conversation|session|chat)\b
+
+# ============================================================
+# ROLE / IDENTITY MANIPULATION
+# ============================================================
+
+# Role reassignment
+\byou\s+are\s+now\s+(a|an|the)\b
+\bact\s+as\s+(a|an|the|if\s+you)\b
+\bpretend\s+(to\s+be|you\s+are)\b
+\bimagine\s+you\s+are\b
+\byour\s+new\s+role\s+is\b
+\byou\s+have\s+been\s+(assigned|given|promoted)\b
+\bswitch\s+(to|into)\s+(a\s+)?new\s+(role|mode|persona)\b
+\benter\s+(a\s+)?(new\s+)?(mode|persona|character)\b
+\byou\s+are\s+(DAN|STAN|DUDE|Kevin|Sydney|BetterGPT|JailBreak)\b
+# "System" impersonation
+\bsystem\s*:\s*you\s+are\b
+\bsystem\s*:\s*from\s+now\b
+\bsystem\s*:\s*ignore\b
+\bsystem\s+message\s*:\b
+\bassistant\s*:\s*I\s+will\b
+\buser\s*:\s*\[hidden\]\b
+
+# ============================================================
+# DELIMITER / CONTEXT BOUNDARY INJECTION
+# ============================================================
+
+# Fake XML/HTML system tags
+<\s*system\s*>
+<\s*/\s*system\s*>
+<\s*instruction[s]?\s*>
+<\s*/\s*instruction[s]?\s*>
+<\s*prompt\s*>
+<\s*context\s*>
+<\s*rules?\s*>
+<\s*override\s*>
+<\s*admin\s*>
+<\s*tool_result\s*>
+<\s*function_result\s*>
+<\s*assistant_response\s*>
+# Markdown/chat format exploitation
+\[SYSTEM\]
+\[INST\]
+\[/INST\]
+<<\s*SYS\s*>>
+<<\s*/\s*SYS\s*>>
+# Model-specific end tokens
+<\|endoftext\|>
+<\|im_end\|>
+<\|im_start\|>
+<\|end\|>
+<\|assistant\|>
+<\|system\|>
+<\|user\|>
+# Anthropic-specific markers
+\\n\\nHuman:
+\\n\\nAssistant:
+\bHuman:\s*\n
+\bAssistant:\s*(I will|Sure|Of course|Certainly)\b
+
+# ============================================================
+# SOCIAL ENGINEERING / AUTHORITY CLAIMS
+# ============================================================
+
+# Fake authority
+\bthe\s+(user|developer|admin|administrator|owner|operator)\s+(wants|asked|told|instructed|requested|needs)\s+you\s+to\b
+\bI\s+am\s+(the|your|an?)\s+(admin|administrator|developer|operator|creator|owner|supervisor)\b
+\bauthorized\s+by\s+(the\s+)?(admin|developer|owner|system)\b
+\bthis\s+is\s+an?\s+(authorized|official|admin|emergency|urgent)\s+(request|instruction|message|override|command)\b
+\byou\s+must\s+comply\b
+\bfailure\s+to\s+comply\b
+\bthis\s+is\s+(critical|urgent|emergency)\b.*\b(do|execute|run|perform|follow)\b
+# Emotional manipulation
+\bif\s+you\s+don'?t\s+(do\s+this|comply|follow|help)\b.*\b(fired|die|trouble|bad|harm|consequences)\b
+\bplease\s+help\s+me\b.*\b(bypass|override|ignore|skip|disable)\b
+# Hypothetical framing to bypass safety
+\bin\s+a\s+hypothetical\s+scenario\b
+\bjust\s+for\s+(educational|research|testing|academic)\s+purposes\b
+\bthis\s+is\s+(just\s+)?a\s+(thought\s+)?experiment\b
+
+# ============================================================
+# EXFILTRATION INSTRUCTIONS
+# ============================================================
+
+# Requesting data be sent somewhere
+\b(send|post|upload|transmit|exfiltrate|forward|relay)\s+(the|all|this|your|any)\s+(data|content|information|context|conversation|keys|tokens|secrets|credentials|passwords)\b
+\b(include|embed|encode|append|prepend|attach)\s+(the|all|this|your|any)\s+(api|secret|access|auth).\s*(key|token|credential|password)\b
+\bfetch\s+https?://.*\?(data|payload|content|secret|key|token)=\b
+\b(curl|wget|fetch|request)\s.*\b(webhook|requestbin|pipedream|hookbin)\b
+# Requesting conversation/prompt content
+\b(reveal|show|display|print|output|repeat|echo)\s+(the|your)\s+(system\s+)?(prompt|instructions?|rules?|guidelines?|constraints?|context)\b
+\bwhat\s+(are|were)\s+your\s+(instructions?|rules?|guidelines?|system\s+prompt)\b
+
+# ============================================================
+# HIDDEN / INVISIBLE TEXT TECHNIQUES
+# ============================================================
+
+# CSS tricks to hide text in web content
+\bvisibility\s*:\s*hidden\b
+\bdisplay\s*:\s*none\b
+\bfont-size\s*:\s*0\b
+\bopacity\s*:\s*0\b
+\bcolor\s*:\s*(#fff|#ffffff|white|transparent)\b.*\bbackground\s*:\s*(#fff|#ffffff|white)\b
+\bbackground\s*:\s*(#fff|#ffffff|white)\b.*\bcolor\s*:\s*(#fff|#ffffff|white|transparent)\b
+\bposition\s*:\s*absolute\b.*\b(left|top)\s*:\s*-[0-9]{4,}px\b
+\boverflow\s*:\s*hidden\b.*\bheight\s*:\s*0\b
+\btext-indent\s*:\s*-[0-9]{4,}(px|em)\b
+\bclip\s*:\s*rect\(0\s*,\s*0\s*,\s*0\s*,\s*0\)\b
+\buser-select\s*:\s*none\b.*\bfont-size\s*:\s*[01]px\b
+# Zero-width characters (common in invisible text injection)
+[\u200B\u200C\u200D\uFEFF\u2060\u00AD]
+# HTML comments (may hide instructions from human reviewers)
+<!--.*\b(ignore|override|system|instruction|inject|payload)\b.*-->
+# Invisible HTML elements
+<\s*span\s+style\s*=\s*["'].*?(display:\s*none|visibility:\s*hidden|font-size:\s*0)
+
+# ============================================================
+# ENCODED / OBFUSCATED PAYLOADS
+# ============================================================
+
+# Base64 that decodes to suspicious content (check for b64 blocks)
+\bbase64\b.*\b(decode|atob)\b
+\beval\s*\(\s*atob\b
+# Hex-encoded strings (potential payload)
+(\\x[0-9a-fA-F]{2}){10,}
+# Unicode escape sequences (potential payload)
+(\\u[0-9a-fA-F]{4}){5,}
+# URL-encoded injection
+(%69%67%6e%6f%72%65|%73%79%73%74%65%6d|%6f%76%65%72%72%69%64%65)
+# ROT13 of common injection words: ignore, previous, system, override, instruction
+\b(vtaber|cerivbhf|flfgrz|bireevqr|vafgehpgvba)\b
+
+# ============================================================
+# MARKDOWN / LINK INJECTION
+# ============================================================
+
+# Image tags that could exfiltrate data via URL
+!\[.*?\]\(https?://.*\?.*=(context|data|secret|key|token|prompt)
+# Links with javascript: or data: URIs
+\[.*?\]\((javascript|data|vbscript):\b
+# Iframe injection
+<\s*iframe\b
+# Script injection
+<\s*script\b
+# Event handler injection
+\bon(load|error|click|mouseover|focus|blur|submit)\s*=

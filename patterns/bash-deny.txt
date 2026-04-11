@@ -1,0 +1,206 @@
+# Bash command deny patterns
+# One extended regex per line. Lines starting with # are comments.
+# Matched against the full command string from tool_input.command.
+# A match causes the hook to DENY (exit 2).
+
+# ============================================================
+# DESTRUCTIVE FILESYSTEM OPERATIONS
+# ============================================================
+
+# rm with force or recursive flags (rm -rf, rm -f, rm --force, etc.)
+\brm\s+(-[a-zA-Z]*[rf]|--force|--recursive|--no-preserve-root)
+# rmdir (less dangerous but still destructive)
+\brmdir\s
+# Filesystem format / wipe
+\b(mkfs|wipefs|shred|scrub)\b
+# dd (disk destroyer — raw block writes)
+\bdd\s
+# truncate files to zero
+\btruncate\s
+# Overwrite with /dev/null or /dev/zero
+>\s*/dev/(null|zero)
+# find with -delete
+\bfind\b.*-delete\b
+# Perl/Python one-liners that unlink or remove
+\bperl\b.*\bunlink\b
+\bpython[23]?\s+-c\b.*\b(os\.remove|os\.unlink|shutil\.rmtree)\b
+
+# ============================================================
+# CREDENTIAL AND SECRET ACCESS
+# ============================================================
+
+# SSH keys and config
+\.(ssh|gnupg)/
+\b(id_rsa|id_ed25519|id_ecdsa|id_dsa)\b
+# AWS credentials
+\.aws/(credentials|config)\b
+# Cloud provider credential files
+\.azure/
+\.config/gcloud/
+\.kube/config\b
+# Package manager auth tokens
+\.(npmrc|pypirc|gem/credentials|docker/config\.json|netrc|composer/auth\.json)\b
+# macOS keychain access
+\bsecurity\s+(find|delete|add)-generic-password\b
+\bsecurity\s+(find|delete|add)-internet-password\b
+\bsecurity\s+dump-keychain\b
+# Password manager CLIs
+\b(pass|gopass|op|bw|rbw)\s+(show|get|read|list|export)\b
+# Vault / secrets manager CLIs
+\bvault\s+(read|write|kv)\b
+\baws\s+secretsmanager\s+get-secret-value\b
+\baws\s+ssm\s+get-parameter\b
+\bgcloud\s+secrets\s+versions\s+access\b
+\baz\s+keyvault\s+secret\s+show\b
+# Env files (reading secrets from dotenv)
+\bcat\b.*\.env\b
+\bless\b.*\.env\b
+\bhead\b.*\.env\b
+\btail\b.*\.env\b
+\bsource\b.*\.env\b
+\b\.\s+.*\.env\b
+# History files (may contain secrets typed interactively)
+\.(bash_history|zsh_history|python_history|node_repl_history|psql_history|mysql_history)\b
+# Private keys
+\.(pem|key|p12|pfx|jks|keystore)\b
+# Grep/find for secrets (reconnaissance)
+\bgrep\b.*(-r|--recursive).*\b(password|secret|token|api.?key|credential)\b
+\bfind\b.*\.(pem|key|env|credentials)\b
+
+# ============================================================
+# DATA EXFILTRATION
+# ============================================================
+
+# curl with data-sending flags
+\bcurl\b.*\s(-d\s|--data|--data-raw|--data-binary|--data-urlencode|--upload-file|-T\s|-F\s|--form)
+# curl POST/PUT/PATCH (methods that send data)
+\bcurl\b.*(-X\s*(POST|PUT|PATCH)|--request\s*(POST|PUT|PATCH))
+# wget with POST
+\bwget\b.*--post-(data|file)
+# Netcat (arbitrary network send)
+\b(nc|ncat|netcat)\b
+# Socat (bidirectional relay)
+\bsocat\b
+# Reverse shells
+\bbash\s+-i\s+>&\s*/dev/tcp/
+/dev/(tcp|udp)/
+# SSH tunneling / port forwarding
+\bssh\b.*(-L\s|-R\s|-D\s|-w\s)
+\bssh\b.*-o\s*ProxyCommand
+# DNS tunneling tools
+\b(iodine|dnscat|dns2tcp)\b
+# Exfiltration via encoding + network
+\bbase64\b.*\|\s*(curl|wget|nc|ncat)
+\bxxd\b.*\|\s*(curl|wget|nc|ncat)
+# Exfiltration via cloud CLIs
+\baws\s+s3\s+(cp|mv|sync)\b.*s3://
+\bgsutil\s+(cp|mv|rsync)\b
+\baz\s+storage\s+blob\s+upload\b
+# Telegram/Discord/Slack webhook exfil
+api\.telegram\.org/bot
+discord\.com/api/webhooks
+hooks\.slack\.com/services
+
+# ============================================================
+# PRIVILEGE ESCALATION
+# ============================================================
+
+\bsudo\b
+\bsu\s
+\bdoas\b
+\bpkexec\b
+# setuid/setgid bit manipulation
+\bchmod\b.*[ug]\+s
+\bchmod\b.*[2467][0-7]{2}\b
+# World-writable
+\bchmod\b.*777\b
+\bchmod\b.*o\+w
+# Change ownership to root
+\bchown\b.*root
+# Capabilities manipulation
+\bsetcap\b
+\bgetcap\b
+
+# ============================================================
+# SUPPLY CHAIN ATTACKS
+# ============================================================
+
+# Piped-to-shell installs (curl|sh, wget|bash, etc.)
+\b(curl|wget)\b.*\|\s*(sh|bash|zsh|dash|ksh|csh|tcsh|fish|perl|python[23]?|ruby|node)\b
+# npm global installs (may run arbitrary postinstall scripts)
+\bnpm\s+install\s+-g\b
+\bnpx\s
+# pip install from URL or arbitrary source
+\bpip[23]?\s+install\b.*\b(http://|https://|git\+|--index-url|--extra-index-url)\b
+# gem install from arbitrary source
+\bgem\s+install\b.*--source\b
+# go install from arbitrary URL
+\bgo\s+install\b.*@
+# Cargo install from git
+\bcargo\s+install\b.*--git\b
+# composer with arbitrary repos
+\bcomposer\s+(require|install)\b.*--repository\b
+
+# ============================================================
+# GIT SAFETY BYPASSES
+# ============================================================
+
+# Skip pre-commit hooks
+--no-verify\b
+# Force push (overwrites remote history)
+\bgit\s+push\b.*(-f\b|--force\b|--force-with-lease\b)
+# Hard reset (discards uncommitted work)
+\bgit\s+reset\s+--hard\b
+# Clean untracked files (irreversible)
+\bgit\s+clean\b.*-[a-zA-Z]*f
+# Checkout that discards changes
+\bgit\s+checkout\b.*\s--\s*\.
+# Force delete branch
+\bgit\s+branch\b.*-D\b
+# Rebase with potential data loss
+\bgit\s+rebase\b.*--onto\b
+# Disable GPG signing
+--no-gpg-sign\b
+-c\s*commit\.gpgsign=false
+
+# ============================================================
+# PROCESS AND SYSTEM DISRUPTION
+# ============================================================
+
+\bkill\s+-9\b
+\bkillall\b
+\bpkill\b
+\b(shutdown|reboot|halt|poweroff|init\s+[06])\b
+\bsystemctl\s+(stop|disable|mask)\b
+\blaunchctl\s+(unload|remove|kill)\b
+\bservice\s+\S+\s+stop\b
+
+# ============================================================
+# CONTAINER AND VM ESCAPE
+# ============================================================
+
+\bdocker\s+run\b.*--privileged\b
+\bdocker\s+run\b.*--pid\s*=\s*host\b
+\bdocker\s+run\b.*--net\s*=\s*host\b
+\bdocker\s+run\b.*-v\s*/:/
+\bnsenter\b
+\bchroot\b
+\bunshare\b
+
+# ============================================================
+# CODE EXECUTION / OBFUSCATION
+# ============================================================
+
+# eval — no safe uses in agent contexts (covers $var, `backtick`, and bare eval)
+\beval\b
+# base64 decode piped to shell
+\bbase64\b.*-[dD]\b.*\|\s*(sh|bash|zsh|eval)\b
+# Python/Ruby/Perl/Node one-liner execution with network imports
+\bpython[23]?\s+-c\b.*\b(urllib|requests|http\.client|socket)\b
+\bruby\s+-e\b.*\b(net/http|open-uri|socket)\b
+\bnode\s+-e\b.*\b(http|https|net|fetch)\b
+\bperl\s+-e\b.*\b(LWP|HTTP|Socket|IO::Socket)\b
+# xargs with shell execution
+\bxargs\b.*\b(sh|bash)\b
+# printf/echo piped to shell (bypass for pipe-to-shell pattern)
+\b(printf|echo)\b.*\|\s*(sh|bash|zsh|dash|ksh|csh|tcsh|fish)\b

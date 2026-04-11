@@ -1,0 +1,77 @@
+{
+  "name": "@de-otio/agent-safety-pack",
+  "version": "0.1.0",
+  "description": "Safety checks and pattern databases for AI coding agents. Intercepts tool calls to block destructive commands, credential exposure, prompt injection, and data exfiltration.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/de-otio/agent-safety-pack.git"
+  },
+  "homepage": "https://github.com/de-otio/agent-safety-pack#readme",
+  "bugs": {
+    "url": "https://github.com/de-otio/agent-safety-pack/issues"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "safety",
+    "security",
+    "prompt-injection",
+    "claude",
+    "llm",
+    "coding-agent",
+    "hooks",
+    "threat-detection"
+  ],
+  "type": "module",
+  "main": "./dist-cjs/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist-cjs/index.d.ts",
+        "default": "./dist-cjs/index.js"
+      }
+    },
+    "./patterns/*": "./patterns/*"
+  },
+  "bin": {
+    "agent-safety-update-feeds": "./dist/bin/update-feeds.js"
+  },
+  "files": [
+    "dist/",
+    "dist-cjs/",
+    "patterns/",
+    "hooks/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.cjs.json && node scripts/post-build-cjs.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check . && tsc --noEmit",
+    "lint:fix": "biome check --write .",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/node": "25.6.0",
+    "@vitest/coverage-v8": "2.1.9",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ]
+}

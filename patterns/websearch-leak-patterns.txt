@@ -1,0 +1,84 @@
+# WebSearch query leak detection patterns
+# One extended regex per line (case-insensitive). Lines starting with # are comments.
+# Matched against tool_input.query before the search executes.
+# A match causes the hook to DENY or ASK.
+#
+# Purpose: prevent sensitive data from leaking into search engine queries,
+# which are logged by providers and may appear in autocomplete, ads targeting,
+# or analytics.
+
+# ============================================================
+# API KEYS AND TOKENS (literal values in query)
+# ============================================================
+
+# AWS
+(AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}
+# GitHub
+\bghp_[a-zA-Z0-9]{36}\b
+\bgithub_pat_[a-zA-Z0-9_]{82}\b
+# OpenAI
+\bsk-[a-zA-Z0-9]{20,}\b
+# Anthropic
+\bsk-ant-[a-zA-Z0-9_-]{20,}\b
+# Stripe
+\b(sk|pk|rk)_live_[a-zA-Z0-9]{24,}\b
+# Google
+AIza[0-9A-Za-z_-]{35}
+# Slack
+\bxox[bpoas]-[a-zA-Z0-9-]{10,}\b
+# Long token-like strings (50+ chars, must contain non-hex chars to avoid git SHA false positives)
+\b(?=[a-zA-Z0-9_-]{50,}\b)[a-zA-Z0-9_-]*[g-zG-Z_][a-zA-Z0-9_-]{20,}\b
+# JWT
+\beyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\b
+# Bearer tokens
+\bBearer\s+[a-zA-Z0-9._-]{20,}\b
+
+# ============================================================
+# PASSWORDS AND CREDENTIALS
+# ============================================================
+
+# Explicit password values
+(?i)\bpassword\s*[:=]\s*\S{6,}\b
+(?i)\bpasswd\s*[:=]\s*\S{6,}\b
+(?i)\bpwd\s*[:=]\s*\S{6,}\b
+# Connection strings with embedded credentials
+(mysql|postgres|mongodb|redis|amqp)://[^:]+:[^@]+@
+
+# ============================================================
+# PRIVATE / PERSONAL INFORMATION
+# ============================================================
+
+# Email addresses
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b
+# Phone numbers (various formats)
+\b(\+?1[-.]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b
+# Social Security Numbers
+\b\d{3}-\d{2}-\d{4}\b
+# Credit card numbers (basic — 13-19 digits)
+\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{1,7}\b
+# IP addresses (internal)
+\b(10|172\.(1[6-9]|2[0-9]|3[01])|192\.168)\.\d+\.\d+\b
+# Internal hostnames
+\b[a-z0-9-]+\.(internal|corp|local|intranet|lan)\b
+
+# ============================================================
+# INTERNAL INFRASTRUCTURE
+# ============================================================
+
+# Internal URLs
+https?://[a-z0-9.-]+\.(internal|corp|local|intranet)\b
+# Database hostnames with port
+\b[a-z0-9.-]+:(3306|5432|27017|6379|9200|5672)\b
+# S3 bucket names (may reveal internal structure)
+\bs3://[a-z0-9.-]+\b
+# Internal path structures
+/(home|var|etc|opt)/[a-z0-9_]+/(secrets?|credentials?|config|\.env)\b
+
+# ============================================================
+# CRYPTOGRAPHIC MATERIAL
+# ============================================================
+
+# Private key content (leading dashes written as quantifier to avoid grep option injection)
+-{5}BEGIN\s+(RSA\s+|EC\s+|OPENSSH\s+)?PRIVATE\s+KEY
+# High-entropy hex strings (potential key material)
+\b[0-9a-fA-F]{64,}\b

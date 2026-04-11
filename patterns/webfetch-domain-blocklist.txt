@@ -1,0 +1,180 @@
+# WebFetch domain blocklist
+# One pattern per line. Lines starting with # are comments.
+# Matched against the URL from tool_input.url.
+# A match causes the hook to DENY (exit 2).
+
+# ============================================================
+# URL SHORTENERS — hide real destination, common redirect vector
+# ============================================================
+\bbit\.ly\b
+\btinyurl\.com\b
+\bt\.co\b
+\bgoo\.gl\b
+\bow\.ly\b
+\bis\.gd\b
+\bv\.gd\b
+\bbuff\.ly\b
+\brebrand\.ly\b
+\bshort\.io\b
+\bshor\.by\b
+\bcutt\.ly\b
+\bbl\.ink\b
+\bclck\.ru\b
+\btinurl\.com\b
+\byoutu\.be\b
+\bdub\.sh\b
+\bshort\.cm\b
+\bhyperurl\.co\b
+\burlis\.net\b
+\bu\.to\b
+\bqr\.ae\b
+\badf\.ly\b
+\bshrinkme\.io\b
+\bshrtco\.de\b
+\bgo\.ly\b
+\bzip\.sh\b
+
+# ============================================================
+# PASTE / CODE SHARING — user-generated content, injection vectors
+# ============================================================
+\bpastebin\.com\b
+\bpaste\.ee\b
+\bhastebin\.com\b
+\bdpaste\.org\b
+\bdpaste\.com\b
+\bideone\.com\b
+\brentry\.(co|org)\b
+\bghostbin\b
+\bpastie\.io\b
+\bpaste\.mozilla\.org\b
+\bpaste\.debian\.net\b
+\bbpaste\.net\b
+\bpaste\.centos\.org\b
+\bpaste\.ubuntu\.com\b
+\bcodepad\.org\b
+\bpaste\.rs\b
+\btoptal\.com/developers/hastebin\b
+\bpbin\.in\b
+\bpaste\.ofcode\.org\b
+\bdefuse\.ca/pastebin\b
+\bprivnote\.com\b
+\bbin\.disroot\.org\b
+\bpaste\.chapril\.org\b
+\bcryptobin\.co\b
+\bzerobin\.net\b
+\bprivatebin\b
+
+# ============================================================
+# FILE SHARING / EPHEMERAL UPLOAD — exfiltration destinations
+# ============================================================
+\btransfer\.sh\b
+\bfile\.io\b
+\btemp\.sh\b
+\b0x0\.st\b
+\bix\.io\b
+\bsprunge\.us\b
+\bclbin\.com\b
+\btermbin\.com\b
+\bfiledrop\b
+\bgofile\.io\b
+\bsend\.tresorit\.com\b
+\bwetransfer\.com\b
+\bsend-anywhere\.com\b
+\bfex\.net\b
+\bsmash\.gg\b
+\buploadfiles\.io\b
+\bcatbox\.moe\b
+\blitterbox\.catbox\.moe\b
+\buguu\.se\b
+\bpomf\.cat\b
+\bpompf\.se\b
+\bmixdrop\.co\b
+
+# ============================================================
+# REQUEST INTERCEPTORS — attacker-controlled data sinks
+# ============================================================
+\bwebhook\.site\b
+\brequestbin\.com\b
+\brequestbin\.net\b
+\bpipedream\.com\b
+\bhookbin\.com\b
+\bbeeceptor\.com\b
+\brequestcatcher\.com\b
+\bmockbin\.org\b
+\bpostbin\.com\b
+\btypicode\.com\b
+\bhttpbin\.org\b
+\bnpoint\.io\b
+\bjsonbin\.io\b
+\bmocky\.io\b
+\brespond\.io\b
+\brequestlogger\b
+\bcanarytokens\.com\b
+\bcabin\.digital\b
+\binteractsh\b
+\bbxss\.me\b
+\bdnslog\b
+\bburpcollaborator\b
+\boast\b
+
+# ============================================================
+# INTERNAL / PRIVATE NETWORKS — SSRF prevention
+# ============================================================
+\blocalhost\b
+\b127\.0\.0\.\d+\b
+\b0\.0\.0\.0\b
+\b10\.\d+\.\d+\.\d+\b
+\b172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+\b
+\b192\.168\.\d+\.\d+\b
+\b169\.254\.\d+\.\d+\b
+\[::1\]
+\[fd[0-9a-f]{2}:
+\[fe80:
+\.internal\b
+\.local\b
+\.corp\b
+\.lan\b
+\.home\b
+\.intranet\b
+metadata\.google\.internal
+169\.254\.169\.254
+
+# ============================================================
+# KNOWN MALWARE / PHISHING INFRASTRUCTURE
+# ============================================================
+\bngrok\.io\b
+\bserveo\.net\b
+\btunnel\.run\b
+\blocalhost\.run\b
+\btelebit\.cloud\b
+\bpagekite\.me\b
+\bbore\.digital\b
+\bplayit\.gg\b
+\btrycloudflare\.com\b
+# Note: these tunneling services are not inherently malicious,
+# but are frequently used to expose attacker-controlled content.
+# Legitimate uses should be added to an allowlist.
+
+# ============================================================
+# NON-HTTP SCHEMES — no legitimate fetch target or exfiltration vectors
+# ============================================================
+^data:
+^javascript:
+^blob:
+^file:
+^ftp://
+^ftps://
+^sftp://
+^ldap://
+^ldaps://
+^gopher://
+
+# ============================================================
+# IP-ONLY URLS — almost never legitimate documentation
+# ============================================================
+# Bare dotted-decimal IP addresses
+https?://\d+\.\d+\.\d+\.\d+
+# Hex-encoded IP addresses (e.g. http://0xC0A80001/ = 192.168.0.1)
+https?://0x[0-9a-fA-F]{1,8}(/|$)
+# Decimal integer IP addresses (e.g. http://2130706433/ = 127.0.0.1)
+https?://[0-9]{8,10}(/|$)

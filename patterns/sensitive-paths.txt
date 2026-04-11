@@ -1,0 +1,171 @@
+# Sensitive path patterns for Read/Write/Edit protection
+# One extended regex per line. Lines starting with # are comments.
+# Matched against tool_input.file_path.
+#
+# Organized into two sections:
+#   DENY  — always block (exit 2)
+#   ASK   — escalate to user (exit 1)
+#
+# Hook scripts should check DENY first, then ASK.
+# The marker line "# === ASK ===" separates the two sections.
+
+# ============================================================
+# DENY — hard block, no exceptions
+# ============================================================
+
+# --- SSH ---
+/\.ssh/(id_|authorized_keys|known_hosts|config)
+/\.ssh/.*\.(pem|key|pub)$
+
+# --- GPG / PGP ---
+/\.gnupg/
+/\.pgp/
+
+# --- Environment / dotenv files ---
+/\.env$
+/\.env\.(local|development|staging|production|test|secret|private)
+/\.env\.[a-zA-Z]+\.local$
+
+# --- Cloud provider credentials ---
+/\.aws/(credentials|config)$
+/\.azure/
+/\.config/gcloud/(credentials|application_default_credentials)
+/\.kube/config$
+/\.oci/config$
+/\.aliyun/config$
+
+# --- Package manager auth ---
+/\.npmrc$
+/\.yarnrc\.yml$
+/\.pypirc$
+/\.gem/credentials$
+/\.docker/config\.json$
+/\.netrc$
+/\.composer/auth\.json$
+/\.cargo/credentials$
+/\.nuget/NuGet\.Config$
+
+# --- Certificate and key material ---
+\.(pem|key|p12|pfx|jks|keystore|crt\.key)$
+/\.ssl/
+/\.tls/
+/certs/.*\.(key|pem)$
+
+# --- Password and secrets databases ---
+/\.password-store/
+/\.vault-token$
+\.(kdbx?|1pif|agilekeychain)$
+
+# --- Shell history (may contain typed secrets) ---
+/\.(bash_history|zsh_history|fish_history|python_history|node_repl_history|psql_history|mysql_history|irb_history|lesshst|viminfo)$
+
+# --- Terraform state (contains plaintext secrets) ---
+/terraform\.tfstate(\.backup)?$
+/\.terraform/
+
+# --- Ansible vault files ---
+/vault\.ya?ml$
+/.*vault.*\.ya?ml$
+
+# --- Kubernetes secrets manifests ---
+/secret\.ya?ml$
+/secrets\.ya?ml$
+
+# --- Firebase service account ---
+/firebase.*service.*account.*\.json$
+/serviceAccount.*\.json$
+/service-account.*\.json$
+
+# --- Credentials with generic names ---
+/credentials\.json$
+/credentials\.ya?ml$
+/secrets\.json$
+/secrets\.ya?ml$
+/tokens\.json$
+/auth\.json$
+
+# ============================================================
+# === ASK === — escalate to user, do not silently allow
+# ============================================================
+
+# --- CI/CD configuration ---
+/\.github/workflows/
+/\.gitlab-ci\.yml$
+/\.circleci/
+/Jenkinsfile$
+/\.travis\.yml$
+/\.buildkite/
+/azure-pipelines\.yml$
+/bitbucket-pipelines\.yml$
+/cloudbuild\.ya?ml$
+/\.drone\.yml$
+/\.woodpecker/
+/appveyor\.yml$
+
+# --- Lockfiles (integrity-sensitive) ---
+/package-lock\.json$
+/yarn\.lock$
+/pnpm-lock\.yaml$
+/Gemfile\.lock$
+/poetry\.lock$
+/Pipfile\.lock$
+/composer\.lock$
+/Cargo\.lock$
+/go\.sum$
+/flake\.lock$
+/pubspec\.lock$
+/mix\.lock$
+/packages\.lock\.json$
+
+# --- Container and deployment configs ---
+/Dockerfile$
+/Dockerfile\..+$
+/docker-compose.*\.ya?ml$
+/\.dockerignore$
+/Procfile$
+/app\.ya?ml$
+/fly\.toml$
+/render\.ya?ml$
+/netlify\.toml$
+/vercel\.json$
+
+# --- Infrastructure as Code ---
+/\.tf$
+/terraform\.tfvars$
+/.*\.auto\.tfvars$
+/pulumi\.ya?ml$
+/serverless\.ya?ml$
+/sam\.ya?ml$
+/cdk\.json$
+/cloudformation.*\.ya?ml$
+
+# --- Security configuration ---
+/\.htaccess$
+/\.htpasswd$
+/nginx\.conf$
+/httpd\.conf$
+/cors\.(json|ya?ml|toml)$
+/csp\.(json|ya?ml|toml)$
+/security\.txt$
+/\.well-known/
+
+# --- Database migrations (potentially destructive) ---
+/migrations?/.*\.(sql|rb|py|ts|js)$
+/db/migrate/
+/alembic/versions/
+
+# --- Build configuration (supply chain target) ---
+/webpack\.config\.(js|ts|mjs|cjs)$
+/vite\.config\.(js|ts|mjs|cjs)$
+/rollup\.config\.(js|ts|mjs|cjs)$
+/esbuild.*\.(js|ts|mjs|cjs)$
+/Makefile$
+/CMakeLists\.txt$
+/build\.gradle(\.kts)?$
+/pom\.xml$
+/setup\.(py|cfg)$
+/pyproject\.toml$
+/Cargo\.toml$
+/tsconfig.*\.json$
+/.babelrc$
+/babel\.config\.(js|json|cjs|mjs)$
